@@ -12,7 +12,7 @@
                 "command": "love"
             },
             "args": 
-                ["${workspaceFolder}/src"]
+                ["${workspaceFolder}"]
     
         },
         {
