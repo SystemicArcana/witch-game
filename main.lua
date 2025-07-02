@@ -25,6 +25,12 @@ local floatingTextFontSize = 14            -- font size of floating texts
 
 local floatingTexts = {}
 
+local function getRandomLizardSpawnInterval()
+    local minTime = math.max(0, lizardSpawnInterval - lizardSpawnIntervalVariance)
+    local maxTime = lizardSpawnInterval + lizardSpawnIntervalVariance
+    return math.random() * (maxTime - minTime) + minTime
+end
+
 function love.load()
     cam = Camera(0, 0)
     cauldronSprite = love.graphics.newImage("assets/sprites/cauldron.png")
@@ -37,12 +43,6 @@ local function clampCamera()
     local camX = math.max(0, math.min(x, worldWidth))
     local camY = math.max(0, math.min(y, worldHeight))
     cam:lookAt(camX, camY)
-end
-
-local function getRandomLizardSpawnInterval()
-    local minTime = math.max(0, lizardSpawnInterval - lizardSpawnIntervalVariance)
-    local maxTime = lizardSpawnInterval + lizardSpawnIntervalVariance
-    return math.random() * (maxTime - minTime) + minTime
 end
 
 function love.update(dt)
@@ -168,49 +168,50 @@ function love.draw()
     love.graphics.print("Move mouse to screen edges to pan camera", 10, 10)
 
     function love.mousepressed(x, y, button)
-    ForageSystem.mousepressed(x, y, button)
+        ForageSystem.mousepressed(x, y, button)
 
-    if button == 1 then -- left click
-        if LizardSpawner.isClicked(x, y) then
-            lizardTailsOwned = lizardTailsOwned + 1
-            LizardSpawner.hideInstant()
-            lizardSpawnTimer = getRandomLizardSpawnInterval()
+        if button == 1 then -- left click
+            if LizardSpawner.isClicked(x, y) then
+                lizardTailsOwned = lizardTailsOwned + 1
+                LizardSpawner.hideInstant()
+                lizardSpawnTimer = getRandomLizardSpawnInterval()
 
-            local baseX = LizardSpawner.x + LizardSpawner.size / 2
-            local baseY = LizardSpawner.y - 10
+                local baseX = LizardSpawner.x + LizardSpawner.size / 2
+                local baseY = LizardSpawner.y - 10
 
-            -- +1 Lizard Tail text
-            table.insert(floatingTexts, {
-                x = baseX,
-                y = baseY,
-                alpha = 1,
-                lifetime = floatingTextDuration,
-                text = "+1 Lizard Tail"
-            })
+                -- +1 Lizard Tail text
+                table.insert(floatingTexts, {
+                    x = baseX,
+                    y = baseY,
+                    alpha = 1,
+                    lifetime = floatingTextDuration,
+                    text = "+1 Lizard Tail"
+                })
 
-            -- Total Owned text just below +1 text
-            table.insert(floatingTexts, {
-                x = baseX,
-                y = baseY + 15,
-                alpha = 1,
-                lifetime = floatingTextDuration,
-                text = "Total Owned: " .. lizardTailsOwned
-            })
+                -- Total Owned text just below +1 text
+                table.insert(floatingTexts, {
+                    x = baseX,
+                    y = baseY + 15,
+                    alpha = 1,
+                    lifetime = floatingTextDuration,
+                    text = "Total Owned: " .. lizardTailsOwned
+                })
+            end
         end
+
+        -- Draw all floating texts centered horizontally
+        love.graphics.setFont(love.graphics.newFont(floatingTextFontSize))
+
+        for _, ft in ipairs(floatingTexts) do
+            love.graphics.setColor(1, 1, 1, ft.alpha)
+            local font = love.graphics.getFont()
+            local textWidth = font:getWidth(ft.text)
+            love.graphics.print(ft.text, ft.x - textWidth / 2, ft.y)
+        end
+
+        love.graphics.setColor(1, 1, 1, 1) -- reset color
     end
 
     LizardSpawner.draw()
     ForageSystem.draw()
-
-    -- Draw all floating texts centered horizontally
-    love.graphics.setFont(love.graphics.newFont(floatingTextFontSize))
-
-    for _, ft in ipairs(floatingTexts) do
-        love.graphics.setColor(1, 1, 1, ft.alpha)
-        local font = love.graphics.getFont()
-        local textWidth = font:getWidth(ft.text)
-        love.graphics.print(ft.text, ft.x - textWidth / 2, ft.y)
-    end
-
-    love.graphics.setColor(1, 1, 1, 1) -- reset color
 end
