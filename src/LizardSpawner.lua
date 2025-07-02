@@ -1,7 +1,12 @@
 -- Spawns clickable lizard tail that fades in and out
 -- Will avoid overlapping UI elements by checking against a list of blockers passed in from main.lua
+ForageSystem = require("src.ForageSystem")
+FloatingText = require("src.FloatingText")
+globals = require("src.globals")
 
 local LizardSpawner = {}
+local lizardSpawnInterval = 4              -- base seconds between spawns
+local lizardSpawnIntervalVariance = 2      -- +/- seconds variance
 
 -- Configuration
 LizardSpawner.size = 50
@@ -9,6 +14,7 @@ LizardSpawner.x = 0
 LizardSpawner.y = 0
 LizardSpawner.alpha = 0
 LizardSpawner.visible = false
+LizardSpawner.visibleDuration = 2
 LizardSpawner.fadingIn = false
 LizardSpawner.fadingOut = false
 LizardSpawner.fadeDuration = 0.5 -- seconds
@@ -109,4 +115,76 @@ function LizardSpawner.isClicked(mx, my)
            my >= LizardSpawner.y and my <= LizardSpawner.y + LizardSpawner.size
 end
 
+function LizardSpawner.getRandomLizardSpawnInterval()
+    local minTime = math.max(0, lizardSpawnInterval - lizardSpawnIntervalVariance)
+    local maxTime = lizardSpawnInterval + lizardSpawnIntervalVariance
+    return math.random() * (maxTime - minTime) + minTime
+end
+
+function LizardSpawner.checkLizard(dt)
+    globals.lizardSpawnTimer = globals.lizardSpawnTimer - dt
+    if LizardSpawner.visible then
+        if LizardSpawner.fadingIn or LizardSpawner.fadingOut then
+            LizardSpawner.update(dt)
+        end
+        
+        local timeToFade = lizardSpawnInterval - LizardSpawner.visibleDuration - LizardSpawner.fadeDuration
+        if globals.lizardSpawnTimer <= timeToFade and not LizardSpawner.fadingOut then
+            LizardSpawner.hide()
+        end
+
+        if not LizardSpawner.visible then
+            globals.lizardSpawnTimer = LizardSpawner.getRandomLizardSpawnInterval()
+        end
+    else
+        if globals.lizardSpawnTimer <= 0 then
+            local blockers = {}
+
+            if ForageSystem.forageButtonVisible then
+                table.insert(blockers, {
+                    x = ForageSystem.forageButtonX,
+                    y = ForageSystem.forageButtonY,
+                    w = 190,
+                    h = 38
+                })
+            end
+
+            if ForageSystem.active then
+                local menuW = 320
+                local menuH = 180
+                local menuX = ForageSystem.forageButtonX + 190 / 2 - menuW / 2
+                local menuY = ForageSystem.forageButtonY + 38 + 10
+
+                table.insert(blockers, {
+                    x = menuX,
+                    y = menuY,
+                    w = menuW,
+                    h = menuH
+                })
+            end
+
+            LizardSpawner.spawn(blockers)
+            globals.lizardSpawnTimer = lizardSpawnInterval
+        end
+    end
+end
+
+function LizardSpawner.mousepressed(x, y, button)
+    if button == 1 then -- left click
+        if LizardSpawner.isClicked(x, y) then
+            globals.lizardTailsOwned = globals.lizardTailsOwned + 1
+            LizardSpawner.hideInstant()
+            lizardSpawnTimer = LizardSpawner.getRandomLizardSpawnInterval()
+
+            local baseX = LizardSpawner.x + LizardSpawner.size / 2
+            local baseY = LizardSpawner.y - 10
+
+            -- +1 Lizard Tail text
+            FloatingText.spawn(baseX, baseY, "+1 Lizard Tail")
+
+            -- Total Owned text just below +1 text
+            FloatingText.spawn(baseX, baseY + 15, "Total Owned: " .. globals.lizardTailsOwned)
+        end
+    end
+end
 return LizardSpawner

@@ -100,7 +100,7 @@ function ForageSystem.mousepressed(x, y, button)
         local menuW = ForageSystem.forageButtonWidth
         local menuH = ForageSystem.forageButtonHeight + 10 + (ForageSystem.active and 270 or 10)
 
-        local clickedLizard = require("LizardSpawner").isClicked(x, y)
+        local clickedLizard = require("src.LizardSpawner").isClicked(x, y)
 
         if ForageSystem.active then
             local scrollY = menuY + ForageSystem.forageButtonHeight + 10 + 20
