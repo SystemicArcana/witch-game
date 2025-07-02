@@ -1,3 +1,7 @@
+local LizardSpawner = require("LizardSpawner")
+local FloatingText = require("FloatingText")
+local ForageSystem = require("ForageSystem")
+
 local Camera = require "src.lib.hump.camera"
 local cam
 local dragging = false
@@ -11,10 +15,21 @@ local worldHeight = 500
 local cauldronX = worldWidth / 2
 local cauldronY = worldHeight /2
 
+local lizardTailsOwned = 0
+local lizardSpawnTimer = 0
+local lizardSpawnInterval = 4              -- base seconds between spawns
+local lizardSpawnIntervalVariance = 2      -- +/- seconds variance
+local visibleDuration = 2                  -- seconds fully visible after fade-in
+local floatingTextDuration = 1             -- seconds floating texts last and fade out
+local floatingTextFontSize = 14            -- font size of floating texts
+
+local floatingTexts = {}
+
 function love.load()
     cam = Camera(0, 0)
     cauldronSprite = love.graphics.newImage("assets/sprites/cauldron.png")
     cauldronHoveredSprite = love.graphics.newImage("assets/sprites/cauldron_witch.png")
+    lizardSpawnTimer = getRandomLizardSpawnInterval()
 end
 
 local function clampCamera()
@@ -22,6 +37,12 @@ local function clampCamera()
     local camX = math.max(0, math.min(x, worldWidth))
     local camY = math.max(0, math.min(y, worldHeight))
     cam:lookAt(camX, camY)
+end
+
+local function getRandomLizardSpawnInterval()
+    local minTime = math.max(0, lizardSpawnInterval - lizardSpawnIntervalVariance)
+    local maxTime = lizardSpawnInterval + lizardSpawnIntervalVariance
+    return math.random() * (maxTime - minTime) + minTime
 end
 
 function love.update(dt)
@@ -57,6 +78,72 @@ function love.update(dt)
     end
 
     clampCamera()
+
+    lizardSpawnTimer = lizardSpawnTimer - dt
+
+    ForageSystem.update(dt)
+
+    if LizardSpawner.visible then
+        if LizardSpawner.fadingIn or LizardSpawner.fadingOut then
+            LizardSpawner.update(dt)
+        end
+
+        if lizardSpawnTimer <= lizardSpawnInterval - visibleDuration - LizardSpawner.fadeDuration and not LizardSpawner.fadingOut then
+            LizardSpawner.hide()
+        end
+
+        if not LizardSpawner.visible then
+            lizardSpawnTimer = getRandomLizardSpawnInterval()
+        end
+    else
+        if lizardSpawnTimer <= 0 then
+            local blockers = {}
+
+            if ForageSystem.forageButtonVisible then
+                table.insert(blockers, {
+                    x = ForageSystem.forageButtonX,
+                    y = ForageSystem.forageButtonY,
+                    w = 190,
+                    h = 38
+                })
+            end
+
+            if ForageSystem.active then
+                local menuW = 320
+                local menuH = 180
+                local menuX = ForageSystem.forageButtonX + 190 / 2 - menuW / 2
+                local menuY = ForageSystem.forageButtonY + 38 + 10
+
+                table.insert(blockers, {
+                    x = menuX,
+                    y = menuY,
+                    w = menuW,
+                    h = menuH
+                })
+            end
+
+            LizardSpawner.spawn(blockers)
+            lizardSpawnTimer = lizardSpawnInterval
+        end
+    end
+
+    -- Update floating texts (move up and fade out)
+    for i = #floatingTexts, 1, -1 do
+        local ft = floatingTexts[i]
+        ft.lifetime = ft.lifetime - dt
+        ft.y = ft.y - 30 * dt      -- move up 30 pixels per second
+
+        local halfDuration = floatingTextDuration / 2
+        if ft.lifetime > halfDuration then
+            ft.alpha = 1
+        else
+            ft.alpha = ft.lifetime / halfDuration
+        end
+
+        if ft.lifetime <= 0 then
+            table.remove(floatingTexts, i)
+        end
+    end
 end
 
 function love.draw()
@@ -79,4 +166,51 @@ function love.draw()
 
     -- UI / instruction
     love.graphics.print("Move mouse to screen edges to pan camera", 10, 10)
+
+    function love.mousepressed(x, y, button)
+    ForageSystem.mousepressed(x, y, button)
+
+    if button == 1 then -- left click
+        if LizardSpawner.isClicked(x, y) then
+            lizardTailsOwned = lizardTailsOwned + 1
+            LizardSpawner.hideInstant()
+            lizardSpawnTimer = getRandomLizardSpawnInterval()
+
+            local baseX = LizardSpawner.x + LizardSpawner.size / 2
+            local baseY = LizardSpawner.y - 10
+
+            -- +1 Lizard Tail text
+            table.insert(floatingTexts, {
+                x = baseX,
+                y = baseY,
+                alpha = 1,
+                lifetime = floatingTextDuration,
+                text = "+1 Lizard Tail"
+            })
+
+            -- Total Owned text just below +1 text
+            table.insert(floatingTexts, {
+                x = baseX,
+                y = baseY + 15,
+                alpha = 1,
+                lifetime = floatingTextDuration,
+                text = "Total Owned: " .. lizardTailsOwned
+            })
+        end
+    end
+
+    LizardSpawner.draw()
+    ForageSystem.draw()
+
+    -- Draw all floating texts centered horizontally
+    love.graphics.setFont(love.graphics.newFont(floatingTextFontSize))
+
+    for _, ft in ipairs(floatingTexts) do
+        love.graphics.setColor(1, 1, 1, ft.alpha)
+        local font = love.graphics.getFont()
+        local textWidth = font:getWidth(ft.text)
+        love.graphics.print(ft.text, ft.x - textWidth / 2, ft.y)
+    end
+
+    love.graphics.setColor(1, 1, 1, 1) -- reset color
 end
