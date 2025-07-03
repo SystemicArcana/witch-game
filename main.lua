@@ -4,6 +4,7 @@ local FloatingText = require("src.FloatingText")
 local ForageSystem = require("src.ForageSystem")
 local CauldronSystem = require("src.CauldronSystem")
 local CameraSystem = require("src.CameraSystem")
+local DialogueBox = require("src.DialogueBox")
 local globals = require("src.globals")
 
 function love.load()
@@ -24,6 +25,7 @@ function love.update(dt)
     ForageSystem.update(dt)
     LizardSpawner.checkLizard(dt)
     FloatingText.update(dt)
+    DialogueBox.update(dt)
 end
 
 function love.draw()
@@ -42,4 +44,5 @@ function love.draw()
     LizardSpawner.draw()
     ForageSystem.draw()
     FloatingText.draw()
+    DialogueBox.draw()
 end
