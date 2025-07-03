@@ -16,19 +16,23 @@ function love.update(dt)
     local mx, my = love.mouse.getPosition()
     local worldX, worldY = globals.cam:worldCoords(mx, my)
 
-    cauldronHovered = CauldronSystem.checkCauldronHover(worldX, worldY)
-
     CameraSystem.scroll(mx, my, dt)
     CameraSystem.clampCamera()
 
+    CauldronSystem.update(worldX, worldY)
     ForageSystem.update(dt)
     LizardSpawner.checkLizard(dt)
     FloatingText.update(dt)
 end
 
 function love.draw()
+    
     globals.cam:attach()
+    -- Drawing that moves with camera goes in here
     CauldronSystem.draw()
+    LizardSpawner.draw()
+    FloatingText.draw()
+
     globals.cam:detach()
 
     -- UI / instruction
@@ -37,9 +41,9 @@ function love.draw()
     function love.mousepressed(x, y, button)
         ForageSystem.mousepressed(x, y, button)
         LizardSpawner.mousepressed(x, y, button)
+        CauldronSystem.mousepressed(x, y, button)
     end
 
-    LizardSpawner.draw()
+
     ForageSystem.draw()
-    FloatingText.draw()
 end
