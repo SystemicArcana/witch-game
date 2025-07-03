@@ -6,7 +6,7 @@
 -- Bar color matches the resource being charged
 
 local ForageSystem = {}
-
+globals = require("src/globals")
 -- Basic UI setup
 ForageSystem.forageButtonX = 860
 ForageSystem.forageButtonY = 100
@@ -18,16 +18,7 @@ ForageSystem.forageButtonVisible = true
 ForageSystem.active = false
 ForageSystem.maxVisibleItems = 4
 
-ForageSystem.resources = {
-    { name = "Wyrmroot", color = {0.55, 0.27, 0.07}, amount = 0 },
-    { name = "Lycanlily", color = {0.5, 0.3, 0.5}, amount = 0 },
-    { name = "TBD 1", color = {0.5, 0.5, 0.5}, amount = 0 },
-    { name = "TBD 2", color = {0.5, 0.5, 0.5}, amount = 0 },
-    { name = "TBD 3", color = {0.5, 0.5, 0.5}, amount = 0 },
-    { name = "TBD 4", color = {0.5, 0.5, 0.5}, amount = 0 },
-    { name = "TBD 5", color = {0.5, 0.5, 0.5}, amount = 0 },
-    { name = "TBD 6", color = {0.5, 0.5, 0.5}, amount = 0 }
-}
+
 ForageSystem.selected = nil
 ForageSystem.queued = nil
 
@@ -55,8 +46,8 @@ function ForageSystem.update(dt)
             ForageSystem.progress = ForageSystem.progress + 1
 
             if ForageSystem.progress >= ForageSystem.targetTicks then
-                ForageSystem.resources[ForageSystem.selected].amount = ForageSystem.resources[ForageSystem.selected].amount + 1
-                local resName = ForageSystem.resources[ForageSystem.selected].name
+                globals.resources[ForageSystem.selected].amount = globals.resources[ForageSystem.selected].amount + 1
+                local resName = globals.resources[ForageSystem.selected].name
                 spawnFloatingText("+1 " .. resName, -10)
 
                 ForageSystem.progress = 0
@@ -65,7 +56,7 @@ function ForageSystem.update(dt)
                     ForageSystem.selected = ForageSystem.queued
                     ForageSystem.queued = nil
                     ForageSystem.targetTicks = math.floor(ForageSystem.baseTicks * (1.5 ^ (ForageSystem.selected - 1)))
-                    spawnFloatingText("Foraging for " .. ForageSystem.resources[ForageSystem.selected].name, 5)
+                    spawnFloatingText("Foraging for " .. globals.resources[ForageSystem.selected].name, 5)
                 end
             end
         end
@@ -104,7 +95,7 @@ function ForageSystem.mousepressed(x, y, button)
 
         if ForageSystem.active then
             local scrollY = menuY + ForageSystem.forageButtonHeight + 10 + 20
-            for i, res in ipairs(ForageSystem.resources) do
+            for i, res in ipairs(globals.resources) do
                 local col = (i - 1) % 2
                 local row = math.floor((i - 1) / 2)
                 local bw = (menuW - 30) / 2
@@ -175,14 +166,14 @@ function ForageSystem.draw()
 
     if ForageSystem.selected then
         local fillW = (ForageSystem.progress / ForageSystem.targetTicks) * pw
-        local color = ForageSystem.resources[ForageSystem.selected].color
+        local color = globals.resources[ForageSystem.selected].color
         love.graphics.setColor(color)
         love.graphics.rectangle("fill", px, py, fillW, ph)
     end
 
     if ForageSystem.active then
         local scrollY = py + ph + 10
-        for i, res in ipairs(ForageSystem.resources) do
+        for i, res in ipairs(globals.resources) do
             local col = (i - 1) % 2
             local row = math.floor((i - 1) / 2)
             local bw = (menuW - 30) / 2
@@ -211,6 +202,8 @@ function ForageSystem.draw()
             end
         end
     end
+    -- Reset color for use elsewhere
+    love.graphics.setColor(1, 1, 1)
 end
 
 return ForageSystem

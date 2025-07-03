@@ -171,7 +171,8 @@ end
 
 function LizardSpawner.mousepressed(x, y, button)
     if button == 1 then -- left click
-        if LizardSpawner.isClicked(x, y) then
+        local worldX, worldY = globals.cam:worldCoords(x, y)
+        if LizardSpawner.isClicked(worldX, worldY) then
             globals.lizardTailsOwned = globals.lizardTailsOwned + 1
             LizardSpawner.hideInstant()
             lizardSpawnTimer = LizardSpawner.getRandomLizardSpawnInterval()
@@ -183,7 +184,7 @@ function LizardSpawner.mousepressed(x, y, button)
             FloatingText.spawn(baseX, baseY, "+1 Lizard Tail")
 
             -- Total Owned text just below +1 text
-            FloatingText.spawn(baseX, baseY + 15, "Total Owned: " .. globals.lizardTailsOwned)
+            FloatingText.spawn(baseX, baseY + 30, "Total Owned: " .. globals.lizardTailsOwned)
         end
     end
 end

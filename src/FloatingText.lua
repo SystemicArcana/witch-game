@@ -6,7 +6,7 @@ local globals = require("src.globals")
 
 local duration = 1.5   -- seconds at 100% opacity before fading
 local riseSpeed = 20   -- pixels per second
-local fontSize = 14
+local fontSize = 34
 
 function FloatingText.spawn(x, y, text)
     table.insert(globals.floatingTexts, {
@@ -39,14 +39,16 @@ end
 
 function FloatingText.draw()
     -- Draw all floating texts centered horizontally
+    defaultFont = love.graphics.getFont()
     love.graphics.setFont(love.graphics.newFont(fontSize))
     for _, ft in ipairs(globals.floatingTexts) do
         love.graphics.setColor(1, 1, 1, ft.alpha)
-        local font = love.graphics.getFont()
-        local textWidth = font:getWidth(ft.text)
+        local textWidth = defaultFont:getWidth(ft.text)
         love.graphics.print(ft.text, ft.x - textWidth / 2, ft.y)
         love.graphics.setColor(1, 1, 1, 1)
     end
+    -- Reset font
+    love.graphics.setFont(defaultFont)
 end
 
 return FloatingText
