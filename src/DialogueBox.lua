@@ -5,12 +5,12 @@ local DialogueBox = {}
 
 -- Message pool
 local messages = {
-    "Interesting how the cauldron liquid never seems to flow over...",
+    "It's amazing how the liquid never seems to bubble over...",
     "I wonder how many other witches are out there..?",
-    "This smells...surprisingly pleasant.",
-    "I quite like it here... much quieter than I'm used to.",
-    "It's amazing the ingredients I can find here!",
-    "Perhaps something new will grow if I pour the cauldron out..?"
+    "The cauldron smells...surprisingly pleasant.",
+    "I like this place... it's much quieter than I'm used to.",
+    "The ingredients here are so strange... I love it!",
+    "Perhaps something new will grow if I pour the cauldron out..."
 }
 
 -- Configuration
@@ -163,7 +163,7 @@ function DialogueBox.draw()
     love.graphics.setColor(1, 1, 1, 1)
 end
 
--- External trigger: DialogueBox.show("Message") or DialogueBox.show()
+-- Call from anywhere via DialogueBox.show("Message") or DialogueBox.show()
 function DialogueBox.show(msg)
     DialogueBox.say(msg)
 end
