@@ -8,14 +8,15 @@ globals.screenWidth = love.graphics.getWidth()
 globals.screenHeight = love.graphics.getHeight()
 globals.scrollSpeed = 300              -- pixels per second
 globals.edgeMargin = 30                -- distance from screen edge to trigger scroll
-globals.worldWidth = 200
-globals.worldHeight = 500
+globals.worldWidth = 2000
+globals.worldHeight = 5000
 -- Cauldron Variables
 globals.brewState = {
     ingredients = {"none", "none", "none"},
     color = {1, 1, 1, 1},
 }
 globals.cauldronStage = 0
+globals.cauldronSelected = false
 globals.cauldronX = globals.worldWidth / 2
 globals.cauldronY = globals.worldHeight /2
 -- Lizard Variables

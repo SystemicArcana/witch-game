@@ -1,9 +1,8 @@
-local globals = require("src.globals")
 local CameraSystem = {}
 
 function CameraSystem.scroll(mx, my, dt)
     -- Horizontal edge scrolling
-    if mx <globals. edgeMargin then
+    if mx < globals.edgeMargin then
         globals.cam:move(-globals.scrollSpeed * dt, 0)
     elseif mx > globals.screenWidth - globals.edgeMargin then
         globals.cam:move(globals.scrollSpeed * dt, 0)
