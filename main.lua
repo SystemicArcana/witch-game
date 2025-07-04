@@ -5,12 +5,13 @@ local ForageSystem = require("src.ForageSystem")
 local CauldronSystem = require("src.CauldronSystem")
 local CameraSystem = require("src.CameraSystem")
 local DialogueBox = require("src.DialogueBox")
-local globals = require("src.globals")
 
 function love.load()
     -- Default zoom: 50%
     globals.cam:zoomTo(0.5)
+    globals.cam:lookAt(globals.cauldronX, globals.cauldronY)
     globals.LizardSpawner = LizardSpawner.getRandomLizardSpawnInterval()
+    CameraSystem.load()
 end
 
 function love.update(dt)
@@ -19,7 +20,6 @@ function love.update(dt)
 
     CameraSystem.scroll(mx, my, dt)
     CameraSystem.clampCamera()
-
     CauldronSystem.update(worldX, worldY)
     ForageSystem.update(dt)
     LizardSpawner.checkLizard(dt)
@@ -28,13 +28,17 @@ function love.update(dt)
 end
 
 function love.draw()
+    -- Drawings that move with camera goes in here
+    CameraSystem.draw()
 
-    -- World space drawings (not screen space) go here
     globals.cam:attach()
         CauldronSystem.draw()
-        LizardSpawner.draw()
         FloatingText.draw()
-        ForageSystem.draw()
+        -- Stage 2 Systems
+        if globals.cauldronStage >= 1 then
+            ForageSystem.draw()
+            LizardSpawner.draw()
+        end
     globals.cam:detach()
 
     -- Screen space drawings (these need to be placed explicitly AFTER global detach)
@@ -46,7 +50,12 @@ end
 
 function love.mousepressed(x, y, button)
     local worldX, worldY = globals.cam:worldCoords(x, y)
-    ForageSystem.mousepressed(worldX, worldY, button)
     LizardSpawner.mousepressed(worldX, worldY, button)
     CauldronSystem.mousepressed(worldX, worldY, button)
+
+    -- Stage 2 Systems
+    if globals.cauldronStage >= 1 then
+        ForageSystem.mousepressed(worldX, worldY, button)
+        LizardSpawner.mousepressed(x, y, button)
+    end
 end
