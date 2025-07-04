@@ -4,6 +4,7 @@ local FloatingText = require("src.FloatingText")
 local ForageSystem = require("src.ForageSystem")
 local CauldronSystem = require("src.CauldronSystem")
 local CameraSystem = require("src.CameraSystem")
+local DialogueBox = require("src.DialogueBox")
 local globals = require("src.globals")
 
 function love.load()
@@ -23,17 +24,21 @@ function love.update(dt)
     ForageSystem.update(dt)
     LizardSpawner.checkLizard(dt)
     FloatingText.update(dt)
+    DialogueBox.update(dt)
 end
 
 function love.draw()
     
     globals.cam:attach()
-    -- Drawing that moves with camera goes in here
+    -- Drawings that move with camera goes in here
     CauldronSystem.draw()
     LizardSpawner.draw()
     FloatingText.draw()
+    ForageSystem.draw()
 
     globals.cam:detach()
+
+    DialogueBox.draw() -- explicity placed AFTER global detach
 
     -- UI / instruction
     love.graphics.print("Move mouse to screen edges to pan camera", 10, 10)
@@ -43,7 +48,4 @@ function love.draw()
         LizardSpawner.mousepressed(x, y, button)
         CauldronSystem.mousepressed(x, y, button)
     end
-
-
-    ForageSystem.draw()
 end
