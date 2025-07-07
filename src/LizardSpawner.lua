@@ -17,7 +17,7 @@ LizardSpawner.visible = false
 LizardSpawner.visibleDuration = 2
 LizardSpawner.fadingIn = false
 LizardSpawner.fadingOut = false
-LizardSpawner.fadeDuration = 0.5 -- seconds
+LizardSpawner.fadeDuration = 0.5
 LizardSpawner.fadeTimer = 0
 
 -- Axis-aligned bounding box overlap check
@@ -28,7 +28,6 @@ local function isOverlapping(x1, y1, w1, h1, x2, y2, w2, h2)
            y1 + h1 > y2
 end
 
--- Attempt to spawn in a random location avoiding UI blockers
 function LizardSpawner.spawn(blockers)
     local width, height = love.graphics.getDimensions()
     local maxRetries = 10
@@ -60,11 +59,10 @@ function LizardSpawner.spawn(blockers)
     end
 
     if not found then
-        LizardSpawner.visible = false -- delay retry until next timer window
+        LizardSpawner.visible = false
     end
 end
 
--- Instantly hide the square (used on click)
 function LizardSpawner.hideInstant()
     LizardSpawner.visible = false
     LizardSpawner.alpha = 0
@@ -72,7 +70,6 @@ function LizardSpawner.hideInstant()
     LizardSpawner.fadingOut = false
 end
 
--- Begin fade-out animation
 function LizardSpawner.hide()
     if LizardSpawner.visible and not LizardSpawner.fadingOut then
         LizardSpawner.fadingIn = false
@@ -81,7 +78,6 @@ function LizardSpawner.hide()
     end
 end
 
--- Animate fade-in and fade-out
 function LizardSpawner.update(dt)
     if LizardSpawner.fadingIn then
         LizardSpawner.alpha = LizardSpawner.alpha + dt / LizardSpawner.fadeDuration
@@ -99,20 +95,27 @@ function LizardSpawner.update(dt)
     end
 end
 
--- Draw the lizard tail square with current opacity
 function LizardSpawner.draw()
     if LizardSpawner.visible then
         love.graphics.setColor(1, 1, 1, LizardSpawner.alpha)
         love.graphics.rectangle("fill", LizardSpawner.x, LizardSpawner.y, LizardSpawner.size, LizardSpawner.size)
+        love.graphics.setColor(1, 0, 0, 0.5)
+        love.graphics.rectangle("line", LizardSpawner.x, LizardSpawner.y, LizardSpawner.size, LizardSpawner.size)
         love.graphics.setColor(1, 1, 1, 1)
     end
 end
 
--- Check if the player clicked the box
+-- Always assumes world-space coords now
 function LizardSpawner.isClicked(mx, my)
-    return LizardSpawner.visible and
-           mx >= LizardSpawner.x and mx <= LizardSpawner.x + LizardSpawner.size and
-           my >= LizardSpawner.y and my <= LizardSpawner.y + LizardSpawner.size
+    local inside =
+        LizardSpawner.visible and
+        mx >= LizardSpawner.x and mx <= LizardSpawner.x + LizardSpawner.size and
+        my >= LizardSpawner.y and my <= LizardSpawner.y + LizardSpawner.size
+
+    print(string.format("Clicked at (%.1f, %.1f) | Box at (%.1f, %.1f, %d) → Inside: %s",
+        mx, my, LizardSpawner.x, LizardSpawner.y, LizardSpawner.size, tostring(inside)))
+
+    return inside
 end
 
 function LizardSpawner.getRandomLizardSpawnInterval()
@@ -127,7 +130,7 @@ function LizardSpawner.checkLizard(dt)
         if LizardSpawner.fadingIn or LizardSpawner.fadingOut then
             LizardSpawner.update(dt)
         end
-        
+
         local timeToFade = lizardSpawnInterval - LizardSpawner.visibleDuration - LizardSpawner.fadeDuration
         if globals.lizardSpawnTimer <= timeToFade and not LizardSpawner.fadingOut then
             LizardSpawner.hide()
@@ -169,23 +172,23 @@ function LizardSpawner.checkLizard(dt)
     end
 end
 
+-- Receives worldX, worldY now
 function LizardSpawner.mousepressed(x, y, button)
-    if button == 1 then -- left click
-        local worldX, worldY = globals.cam:worldCoords(x, y)
-        if LizardSpawner.isClicked(worldX, worldY) then
+    if button == 1 then
+        if LizardSpawner.isClicked(x, y) then
+            print("LIZARD CLICKED!")
+
             globals.lizardTailsOwned = globals.lizardTailsOwned + 1
             LizardSpawner.hideInstant()
-            lizardSpawnTimer = LizardSpawner.getRandomLizardSpawnInterval()
+            globals.lizardSpawnTimer = LizardSpawner.getRandomLizardSpawnInterval()
 
             local baseX = LizardSpawner.x + LizardSpawner.size / 2
             local baseY = LizardSpawner.y - 10
 
-            -- +1 Lizard Tail text
             FloatingText.spawn(baseX, baseY, "+1 Lizard Tail")
-
-            -- Total Owned text just below +1 text
             FloatingText.spawn(baseX, baseY + 30, "Total Owned: " .. globals.lizardTailsOwned)
         end
     end
 end
+
 return LizardSpawner

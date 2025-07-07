@@ -18,7 +18,6 @@ ForageSystem.forageButtonVisible = true
 ForageSystem.active = false
 ForageSystem.maxVisibleItems = 4
 
-
 ForageSystem.selected = nil
 ForageSystem.queued = nil
 

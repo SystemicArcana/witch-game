@@ -28,24 +28,25 @@ function love.update(dt)
 end
 
 function love.draw()
-    
-    globals.cam:attach()
-    -- Drawings that move with camera goes in here
-    CauldronSystem.draw()
-    LizardSpawner.draw()
-    FloatingText.draw()
-    ForageSystem.draw()
 
+    -- World space drawings (not screen space) go here
+    globals.cam:attach()
+        CauldronSystem.draw()
+        LizardSpawner.draw()
+        FloatingText.draw()
+        ForageSystem.draw()
     globals.cam:detach()
 
-    DialogueBox.draw() -- explicity placed AFTER global detach
+    -- Screen space drawings (these need to be placed explicitly AFTER global detach)
+    DialogueBox.draw()
 
     -- UI / instruction
     love.graphics.print("Move mouse to screen edges to pan camera", 10, 10)
+end
 
-    function love.mousepressed(x, y, button)
-        ForageSystem.mousepressed(x, y, button)
-        LizardSpawner.mousepressed(x, y, button)
-        CauldronSystem.mousepressed(x, y, button)
-    end
+function love.mousepressed(x, y, button)
+    local worldX, worldY = globals.cam:worldCoords(x, y)
+    ForageSystem.mousepressed(worldX, worldY, button)
+    LizardSpawner.mousepressed(worldX, worldY, button)
+    CauldronSystem.mousepressed(worldX, worldY, button)
 end
