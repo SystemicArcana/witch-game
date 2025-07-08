@@ -17,10 +17,10 @@ local messages = {
 local fadeInDuration  = 0.5   -- seconds to fade in box
 local textDelay       = 0.25  -- initial pause before first character
 local charDelay       = 0.033 -- between normal characters
-local dotDelay        = 0.5   -- between periods ("…")
-local showDuration    = 3     -- seconds fully visible after typing
-local fadeOutDuration = 2     -- seconds to fade out
-local interval        = 10    -- seconds between pop‑ups when idle
+local dotDelay        = 0.4   -- between periods ("…")
+local showDuration    = 2     -- seconds fully visible after typing
+local fadeOutDuration = 1.5     -- seconds to fade out
+local interval        = 30    -- seconds between pop‑ups when idle
 
 -- Loaded resources
 local parchmentNoise = love.graphics.newImage("assets/images/ParchmentBackground.png")
@@ -121,7 +121,7 @@ function DialogueBox.draw()
     end
 
     local sw, sh = love.graphics.getWidth(), love.graphics.getHeight()
-    local boxW, boxH = sw * 0.5, 130
+    local boxW, boxH = sw * 0.5, 90 -- last number here controls box height
     local x = (sw - boxW) * 0.5
     local y = sh - boxH - (sh * 0.1)
     local corner = 8

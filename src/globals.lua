@@ -30,11 +30,6 @@ globals.lizardSpawnTimer = 0
 globals.resources = {
     { name = "Wyrmroot", color = {0.55, 0.27, 0.07}, amount = 1, PVC = {-1, 0, 1}, mood = "Rage"},
     { name = "Lycanlily", color = {0.5, 0.3, 0.5}, amount = 1, PVC = {1, 0, -1}, mood = "Sorrow" },
-    { name = "TBD 1", color = {0.5, 0.5, 0.5}, amount = 0 },
-    { name = "TBD 2", color = {0.5, 0.5, 0.5}, amount = 0 },
-    { name = "TBD 3", color = {0.5, 0.5, 0.5}, amount = 0 },
-    { name = "TBD 4", color = {0.5, 0.5, 0.5}, amount = 0 },
-    { name = "TBD 5", color = {0.5, 0.5, 0.5}, amount = 0 },
-    { name = "TBD 6", color = {0.5, 0.5, 0.5}, amount = 0 }
+    { name = "Crimson Ivy", color = {0.9, 0.2, 0.3}, amount = 1, PVC = {1, 2, -1}, mood = "Fear" }
 }
 return globals

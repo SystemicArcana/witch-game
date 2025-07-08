@@ -1,26 +1,41 @@
--- Spawns clickable lizard tail that fades in and out
--- Will avoid overlapping UI elements by checking against a list of blockers passed in from main.lua
+-- LizardSpawner: Spawns clickable lizard tail that fades in/out and wiggles with rotation
 ForageSystem = require("src.ForageSystem")
 FloatingText = require("src.FloatingText")
 globals = require("src.globals")
 
 local LizardSpawner = {}
-local lizardSpawnInterval = 4              -- base seconds between spawns
-local lizardSpawnIntervalVariance = 2      -- +/- seconds variance
 
--- Configuration
-LizardSpawner.size = 50
+-- Spawn timing configuration
+local lizardSpawnInterval = 4
+local lizardSpawnIntervalVariance = 2
+
+-- Lizard visual configuration
+LizardSpawner.baseSize = 50
+LizardSpawner.size = LizardSpawner.baseSize * 2.2  -- Final visual size
 LizardSpawner.x = 0
 LizardSpawner.y = 0
 LizardSpawner.alpha = 0
 LizardSpawner.visible = false
+
+-- Fade animation config
 LizardSpawner.visibleDuration = 2
+LizardSpawner.fadeDuration = 0.5
 LizardSpawner.fadingIn = false
 LizardSpawner.fadingOut = false
-LizardSpawner.fadeDuration = 0.5
 LizardSpawner.fadeTimer = 0
 
--- Axis-aligned bounding box overlap check
+-- Wiggle (rotation) state
+LizardSpawner.wiggleTimer = 0
+LizardSpawner.wiggleSpeed = 6         -- Radians per second
+LizardSpawner.wiggleAmplitude = 0.2   -- Max angle in radians (~11.5°)
+
+-- Lizard sprite
+local lizardImage = love.graphics.newImage("assets/sprites/lizard.png")
+local lizardImageW = lizardImage:getWidth()
+local lizardImageH = lizardImage:getHeight()
+local lizardScale = LizardSpawner.size / math.max(lizardImageW, lizardImageH)
+
+-- Axis-aligned bounding box collision
 local function isOverlapping(x1, y1, w1, h1, x2, y2, w2, h2)
     return x1 < x2 + w2 and
            x1 + w1 > x2 and
@@ -28,8 +43,10 @@ local function isOverlapping(x1, y1, w1, h1, x2, y2, w2, h2)
            y1 + h1 > y2
 end
 
+-- Attempt to spawn the lizard randomly within full world bounds, avoiding blockers
 function LizardSpawner.spawn(blockers)
-    local width, height = love.graphics.getDimensions()
+    local width = globals.worldWidth
+    local height = globals.worldHeight
     local maxRetries = 10
     local found = false
 
@@ -53,6 +70,7 @@ function LizardSpawner.spawn(blockers)
             LizardSpawner.fadingIn = true
             LizardSpawner.fadingOut = false
             LizardSpawner.fadeTimer = 0
+            LizardSpawner.wiggleTimer = 0
             found = true
             break
         end
@@ -63,6 +81,7 @@ function LizardSpawner.spawn(blockers)
     end
 end
 
+-- Instantly remove lizard from screen
 function LizardSpawner.hideInstant()
     LizardSpawner.visible = false
     LizardSpawner.alpha = 0
@@ -70,6 +89,7 @@ function LizardSpawner.hideInstant()
     LizardSpawner.fadingOut = false
 end
 
+-- Begin fade-out animation
 function LizardSpawner.hide()
     if LizardSpawner.visible and not LizardSpawner.fadingOut then
         LizardSpawner.fadingIn = false
@@ -78,6 +98,7 @@ function LizardSpawner.hide()
     end
 end
 
+-- Update fade animation and wiggle timer
 function LizardSpawner.update(dt)
     if LizardSpawner.fadingIn then
         LizardSpawner.alpha = LizardSpawner.alpha + dt / LizardSpawner.fadeDuration
@@ -93,19 +114,34 @@ function LizardSpawner.update(dt)
             LizardSpawner.visible = false
         end
     end
+
+    LizardSpawner.wiggleTimer = LizardSpawner.wiggleTimer + dt
 end
 
+-- Draw the lizard with alpha and wiggle rotation
 function LizardSpawner.draw()
     if LizardSpawner.visible then
         love.graphics.setColor(1, 1, 1, LizardSpawner.alpha)
-        love.graphics.rectangle("fill", LizardSpawner.x, LizardSpawner.y, LizardSpawner.size, LizardSpawner.size)
-        love.graphics.setColor(1, 0, 0, 0.5)
-        love.graphics.rectangle("line", LizardSpawner.x, LizardSpawner.y, LizardSpawner.size, LizardSpawner.size)
+
+        -- Calculate rotation based on sine wave for wiggle
+        local angle = math.sin(LizardSpawner.wiggleTimer * LizardSpawner.wiggleSpeed) * LizardSpawner.wiggleAmplitude
+
+        -- Draw centered with rotation and scaling
+        local cx = LizardSpawner.x + LizardSpawner.size / 2
+        local cy = LizardSpawner.y + LizardSpawner.size / 2
+        love.graphics.draw(
+            lizardImage,
+            cx, cy,
+            angle,
+            lizardScale, lizardScale,
+            lizardImageW / 2, lizardImageH / 2
+        )
+
         love.graphics.setColor(1, 1, 1, 1)
     end
 end
 
--- Always assumes world-space coords now
+-- Check if mouse click hits the lizard bounding box
 function LizardSpawner.isClicked(mx, my)
     local inside =
         LizardSpawner.visible and
@@ -118,18 +154,18 @@ function LizardSpawner.isClicked(mx, my)
     return inside
 end
 
+-- Calculate next randomized spawn interval
 function LizardSpawner.getRandomLizardSpawnInterval()
     local minTime = math.max(0, lizardSpawnInterval - lizardSpawnIntervalVariance)
     local maxTime = lizardSpawnInterval + lizardSpawnIntervalVariance
     return math.random() * (maxTime - minTime) + minTime
 end
 
+-- Master control for spawning/fading lizard on timer
 function LizardSpawner.checkLizard(dt)
     globals.lizardSpawnTimer = globals.lizardSpawnTimer - dt
     if LizardSpawner.visible then
-        if LizardSpawner.fadingIn or LizardSpawner.fadingOut then
-            LizardSpawner.update(dt)
-        end
+        LizardSpawner.update(dt)
 
         local timeToFade = lizardSpawnInterval - LizardSpawner.visibleDuration - LizardSpawner.fadeDuration
         if globals.lizardSpawnTimer <= timeToFade and not LizardSpawner.fadingOut then
@@ -172,7 +208,7 @@ function LizardSpawner.checkLizard(dt)
     end
 end
 
--- Receives worldX, worldY now
+-- Handle mouse click on lizard
 function LizardSpawner.mousepressed(x, y, button)
     if button == 1 then
         if LizardSpawner.isClicked(x, y) then

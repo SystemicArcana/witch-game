@@ -7,6 +7,7 @@
 
 local ForageSystem = {}
 globals = require("src/globals")
+
 -- Basic UI setup
 ForageSystem.forageButtonX = 860
 ForageSystem.forageButtonY = 100
@@ -16,8 +17,6 @@ ForageSystem.forageButtonVisible = true
 
 -- Menu state
 ForageSystem.active = false
-ForageSystem.maxVisibleItems = 4
-
 ForageSystem.selected = nil
 ForageSystem.queued = nil
 
@@ -31,6 +30,10 @@ ForageSystem.targetTicks = 0
 -- Floating text support
 local floatingTexts = {}
 local floatingTextDuration = 1.5
+
+-- Fonts (scoped per element)
+local headerFont = love.graphics.newFont(40)
+local buttonFont = love.graphics.newFont(28)
 
 function ForageSystem.toggleMenu()
     ForageSystem.active = not ForageSystem.active
@@ -76,7 +79,7 @@ end
 function spawnFloatingText(text, offset)
     table.insert(floatingTexts, {
         x = ForageSystem.forageButtonX + ForageSystem.forageButtonWidth / 2,
-        y = ForageSystem.forageButtonY + offset,
+        y = ForageSystem.forageButtonY + offset - 30,
         alpha = 1,
         lifetime = floatingTextDuration,
         text = text
@@ -88,19 +91,28 @@ function ForageSystem.mousepressed(x, y, button)
         local menuX = ForageSystem.forageButtonX
         local menuY = ForageSystem.forageButtonY
         local menuW = ForageSystem.forageButtonWidth
-        local menuH = ForageSystem.forageButtonHeight + 10 + (ForageSystem.active and 270 or 10)
+
+        local resourceCount = #globals.resources
+        local headerHeight = ForageSystem.forageButtonHeight
+        local headerPadding = 25
+        local progressBarHeight = 20
+        local progressBarPadding = 10
+        local resourceButtonHeight = 74
+
+        local expandedHeight = headerHeight + headerPadding + progressBarHeight + progressBarPadding +
+                              (resourceCount * resourceButtonHeight)
+
+        local menuH = ForageSystem.active and expandedHeight or (headerHeight + headerPadding + progressBarHeight + progressBarPadding)
 
         local clickedLizard = require("src.LizardSpawner").isClicked(x, y)
 
         if ForageSystem.active then
-            local scrollY = menuY + ForageSystem.forageButtonHeight + 10 + 20
+            local scrollY = menuY + headerHeight + headerPadding + progressBarHeight + progressBarPadding
             for i, res in ipairs(globals.resources) do
-                local col = (i - 1) % 2
-                local row = math.floor((i - 1) / 2)
-                local bw = (menuW - 30) / 2
-                local bx = menuX + 10 + col * (bw + 10)
-                local by = scrollY + row * 50
-                local bh = 40
+                local bw = menuW - 20
+                local bx = menuX + 10
+                local by = scrollY + (i - 1) * resourceButtonHeight
+                local bh = 64
                 if y >= by and y <= by + bh and x >= bx and x <= bx + bw then
                     if ForageSystem.selected == i then
                         ForageSystem.queued = nil
@@ -133,30 +145,45 @@ function ForageSystem.draw()
     local menuX = ForageSystem.forageButtonX
     local menuY = ForageSystem.forageButtonY
     local menuW = ForageSystem.forageButtonWidth
-    local menuH = ForageSystem.forageButtonHeight + 10 + (ForageSystem.active and 270 or 10)
 
+    local resourceCount = #globals.resources
+    local headerHeight = ForageSystem.forageButtonHeight
+    local headerPadding = 25
+    local progressBarHeight = 20
+    local progressBarPadding = 10
+    local resourceButtonHeight = 74
+
+    local expandedHeight = headerHeight + headerPadding + progressBarHeight + progressBarPadding +
+                          (resourceCount * resourceButtonHeight)
+
+    local menuH = ForageSystem.active and expandedHeight or (headerHeight + headerPadding + progressBarHeight + progressBarPadding)
+
+    -- Draw menu background
     love.graphics.setColor(0.1, 0.4, 0.1)
     love.graphics.rectangle("fill", menuX, menuY, menuW, menuH, 6, 6)
     love.graphics.setColor(0, 0.2, 0)
     love.graphics.setLineWidth(2)
     love.graphics.rectangle("line", menuX, menuY, menuW, menuH, 6, 6)
 
+    -- Draw Foraging title
     love.graphics.setColor(1, 1, 1)
-    love.graphics.setFont(love.graphics.newFont(18))
+    love.graphics.setFont(headerFont)
     love.graphics.printf("Foraging", menuX, menuY + 10, menuW, "center")
 
+    -- Floating text
     for _, ft in ipairs(floatingTexts) do
         love.graphics.setColor(1, 1, 1, ft.alpha)
-        local font = love.graphics.getFont()
-        local textWidth = font:getWidth(ft.text)
+        love.graphics.setFont(buttonFont)
+        local textWidth = buttonFont:getWidth(ft.text)
         love.graphics.print(ft.text, ft.x - textWidth / 2, ft.y)
     end
 
-    local ph = ForageSystem.active and 20 or 10
+    -- Progress bar
+    local ph = progressBarHeight
     local barPadding = 30
     local pw = menuW - barPadding
     local px = menuX + barPadding / 2
-    local py = menuY + ForageSystem.forageButtonHeight + 10
+    local py = menuY + headerHeight + headerPadding
 
     love.graphics.setColor(0, 0, 0)
     love.graphics.rectangle("fill", px, py, pw, ph)
@@ -167,18 +194,17 @@ function ForageSystem.draw()
         local fillW = (ForageSystem.progress / ForageSystem.targetTicks) * pw
         local color = globals.resources[ForageSystem.selected].color
         love.graphics.setColor(color)
-        love.graphics.rectangle("fill", px, py, fillW, ph)
+        love.graphics.rectangle("fill", px + 1, py + 1, fillW - 2, ph - 2)
     end
 
+    -- Resource buttons (vertical)
     if ForageSystem.active then
-        local scrollY = py + ph + 10
+        local scrollY = py + ph + progressBarPadding
         for i, res in ipairs(globals.resources) do
-            local col = (i - 1) % 2
-            local row = math.floor((i - 1) / 2)
-            local bw = (menuW - 30) / 2
-            local bx = menuX + 10 + col * (bw + 10)
-            local by = scrollY + row * 50
-            local bh = 40
+            local bw = menuW - 20
+            local bx = menuX + 10
+            local by = scrollY + (i - 1) * resourceButtonHeight
+            local bh = 64
 
             love.graphics.setColor(res.color)
             love.graphics.rectangle("fill", bx, by, bw, bh, 4, 4)
@@ -186,22 +212,25 @@ function ForageSystem.draw()
             love.graphics.rectangle("line", bx, by, bw, bh, 4, 4)
 
             love.graphics.setColor(1, 1, 1)
-            love.graphics.setFont(love.graphics.newFont(16))
-            love.graphics.print(res.amount, bx + 8, by + 10)
-            love.graphics.print(res.name, bx + 40, by + 10)
+            love.graphics.setFont(buttonFont)
+            love.graphics.print(res.amount, bx + 8, by + 20)
+            love.graphics.print(res.name, bx + 100, by + 20)
 
             love.graphics.setColor(1, 1, 1)
             love.graphics.setLineWidth(1)
-            love.graphics.circle("line", bx + bw - 20, by + bh / 2, 8)
+            local circleX = bx + bw - 20
+            local circleY = by + bh / 2
+            love.graphics.circle("line", circleX, circleY, 10)
             if ForageSystem.selected == i then
-                love.graphics.circle("fill", bx + bw - 20, by + bh / 2, 4)
+                love.graphics.circle("fill", circleX, circleY, 6)
             elseif ForageSystem.queued == i then
                 love.graphics.setColor(1, 0, 0)
-                love.graphics.circle("fill", bx + bw - 20, by + bh / 2, 4)
+                love.graphics.circle("fill", circleX, circleY, 6)
             end
         end
     end
-    -- Reset color for use elsewhere
+
+    -- Reset color
     love.graphics.setColor(1, 1, 1)
 end
 
