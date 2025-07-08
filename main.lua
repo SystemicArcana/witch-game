@@ -32,13 +32,13 @@ function love.draw()
     CameraSystem.draw()
 
     globals.cam:attach()
-        CauldronSystem.draw()
-        FloatingText.draw()
         -- Stage 2 Systems
         if globals.cauldronStage >= 1 then
             ForageSystem.draw()
             LizardSpawner.draw()
         end
+        CauldronSystem.draw()
+        FloatingText.draw()
     globals.cam:detach()
 
     -- Screen space drawings (these need to be placed explicitly AFTER global detach)

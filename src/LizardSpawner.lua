@@ -148,8 +148,8 @@ function LizardSpawner.isClicked(mx, my)
         mx >= LizardSpawner.x and mx <= LizardSpawner.x + LizardSpawner.size and
         my >= LizardSpawner.y and my <= LizardSpawner.y + LizardSpawner.size
 
-    print(string.format("Clicked at (%.1f, %.1f) | Box at (%.1f, %.1f, %d) → Inside: %s",
-        mx, my, LizardSpawner.x, LizardSpawner.y, LizardSpawner.size, tostring(inside)))
+        -- print(string.format("Clicked at (%.1f, %.1f) | Box at (%.1f, %.1f, %d) → Inside: %s",
+        -- mx, my, LizardSpawner.x, LizardSpawner.y, LizardSpawner.size, tostring(inside)))
 
     return inside
 end
@@ -212,7 +212,7 @@ end
 function LizardSpawner.mousepressed(x, y, button)
     if button == 1 then
         if LizardSpawner.isClicked(x, y) then
-            print("LIZARD CLICKED!")
+            --print("LIZARD CLICKED!")
 
             globals.lizardTailsOwned = globals.lizardTailsOwned + 1
             LizardSpawner.hideInstant()
