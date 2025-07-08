@@ -5,6 +5,7 @@ local cauldronBrewSprite = love.graphics.newImage("assets/sprites/cauldron_brew.
 local cauldronSlotSprite = love.graphics.newImage("assets/sprites/cauldron_slot.png")
 local lycanLilySprite = love.graphics.newImage("assets/sprites/lycanlily.png")
 local wyrmRootSprite = love.graphics.newImage("assets/sprites/wyrmroot.png")
+local crimsonIvySprite = love.graphics.newImage("assets/sprites/crimson_ivy.png")
 local w = cauldronBrewSprite:getWidth()
 local h = cauldronBrewSprite:getHeight()
 -- Pour/Bottle Button Variables
@@ -44,84 +45,64 @@ function CauldronUI.update(worldX, worldY)
     end
 end
 
+local function drawSlotWithResource(sprite, count, icon, x, y)
+    local fontSize = 24
+    local font = love.graphics.newFont(fontSize)
+    local slotW = cauldronSlotSprite:getWidth()
+    local slotH = cauldronSlotSprite:getHeight()
+    love.graphics.setFont(font)
+
+    -- Draw the slot background
+    love.graphics.draw(sprite, x, y, 0, 1, 1, slotW / 2, slotH / 2)
+
+    -- Draw the resource icon and count if available
+    if count > 0 then
+        love.graphics.draw(icon, x, y, 0, 1, 1, slotW / 2, slotH / 2)
+
+        local text = tostring(count)
+        local textW = font:getWidth(text)
+        local textH = font:getHeight()
+        local textX = x + slotW / 2 - textW - 4
+        local textY = y + slotH / 2 - textH - 2
+
+        love.graphics.print(text, textX, textY)
+    end
+    love.graphics.setFont(love.graphics.newFont())
+end
+
 function CauldronUI.draw()
     love.graphics.setColor(globals.brewState.color)
     love.graphics.draw(cauldronBrewSprite, globals.cauldronX, globals.cauldronY, 0, 1, 1, w/2, h/2)
     love.graphics.setColor(1, 1, 1)
-    local fontSize = 24
-    local slotW = cauldronSlotSprite:getWidth()
-    local slotH = cauldronSlotSprite:getHeight()
-
     local cauldronX = globals.cauldronX
     local cauldronY = globals.cauldronY
 
     local lycanLilyCount = globals.resources[2].amount
     local wyrmRootCount = globals.resources[1].amount
-    local defaultFont = love.graphics.getFont()
-    local font = love.graphics.newFont(fontSize)
-    love.graphics.setFont(font)
-    -- Left Slot 1
-    love.graphics.draw(
-        cauldronSlotSprite,
-        cauldronX - 250,
-        cauldronY,
-        0,
-        1, 1,
-        slotW / 2,
-        slotH / 2
-    )
-    if lycanLilyCount > 0 then
-        -- Left Slot Resource: Lycanlily
-        love.graphics.draw(
-            lycanLilySprite,
-            cauldronX - 250,
-            cauldronY,
-            0,
-            1, 1,
-            slotW / 2,
-            slotH / 2
-        )
-        local textW = font:getWidth(tostring(lycanLilyCount))
-        local textH = font:getHeight()
-        local textX = cauldronX - 250 + slotW / 2 - textW - 4
-        local textY = cauldronY + slotH / 2 - textH - 2
-        love.graphics.print(tostring(lycanLilyCount), textX, textY)
-    end
-    -- Left Slot 2
-    love.graphics.draw(
-        cauldronSlotSprite,
-        cauldronX - 250,
-        cauldronY + 200,
-        0,
-        1, 1,
-        slotW / 2,
-        slotH / 2
-    )
-    if wyrmRootCount > 0 then
-        -- Right Slot Resource: Wyrmroot
-        love.graphics.draw(
-            wyrmRootSprite,
-            cauldronX - 250,
-            cauldronY + 200,
-            0,
-            1, 1,
-            slotW / 2,
-            slotH / 2
-        )
-        local textW = font:getWidth(tostring(wyrmRootCount))
-        local textH = font:getHeight()
-        local textX = cauldronX - 250 + slotW / 2 - textW - 4
-        local textY = cauldronY + 200 + slotH / 2 - textH - 2
-        love.graphics.print(tostring(wyrmRootCount), textX, textY)
-    end
+    local crimsonIvyCount = globals.resources[3].amount
+
+
+    -- Left Slot 1: Lycanlily
+    drawSlotWithResource(cauldronSlotSprite, lycanLilyCount, lycanLilySprite, cauldronX - 250, cauldronY)
+    -- Left Slot 2: Wyrmroot
+    drawSlotWithResource(cauldronSlotSprite, wyrmRootCount, wyrmRootSprite, cauldronX - 250, cauldronY + 200)
+    -- Left Slot 3: Crimson Ivy
+    drawSlotWithResource(cauldronSlotSprite, crimsonIvyCount, crimsonIvySprite, cauldronX - 250, cauldronY - 200)
+
     -- Pour / Bottle Buttons
+    local font = love.graphics.newFont(24)
+    love.graphics.setFont(font)
     if globals.cauldronSelected then
         local total_width = (button_w * 2) + button_spacing
-        local font = love.graphics.getFont()
         -- Offset buttons if > Stage 1
         if globals.cauldronStage >= 1 then
             pour_x = (globals.cauldronX - total_width / 2) -100
-            love.graphics.setColor(0.2, 0.4, 0.8, 1)
+            if require("src/CauldronSystem").bottleStatus() then
+                love.graphics.setColor(0.2, 0.4, 0.8, 1)
+            else
+                -- Set gray if not bottleable
+                love.graphics.setColor(0.6, 0.6, 0.6, 1)
+            end
             love.graphics.rectangle("fill", bottle_x, button_y, button_w, button_h)
             love.graphics.setColor(1, 1, 1)
             love.graphics.print(
@@ -154,6 +135,7 @@ function CauldronUI.draw()
         love.graphics.setColor(1, 1, 1)
         love.graphics.print(tooltipText, tooltipX + 10 + padding, tooltipY + 10 + padding)
     end
+love.graphics.setFont(love.graphics.newFont())
 love.graphics.setColor(1, 1, 1)
 end
 
