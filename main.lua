@@ -5,6 +5,8 @@ local ForageSystem = require("src.ForageSystem")
 local CauldronSystem = require("src.CauldronSystem")
 local CameraSystem = require("src.CameraSystem")
 local DialogueBox = require("src.DialogueBox")
+local QuestTree = require("src.QuestTree")
+
 
 function love.load()
     -- Default zoom: 50%
@@ -25,6 +27,7 @@ function love.update(dt)
     LizardSpawner.checkLizard(dt)
     FloatingText.update(dt)
     DialogueBox.update(dt)
+    QuestTree.update(worldX, worldY)
 end
 
 function love.draw()
@@ -36,6 +39,7 @@ function love.draw()
         if globals.cauldronStage >= 1 then
             ForageSystem.draw()
             LizardSpawner.draw()
+            QuestTree.draw()
         end
         CauldronSystem.draw()
         FloatingText.draw()
@@ -57,5 +61,6 @@ function love.mousepressed(x, y, button)
     if globals.cauldronStage >= 1 then
         ForageSystem.mousepressed(worldX, worldY, button)
         LizardSpawner.mousepressed(x, y, button)
+        QuestTree.mousepressed(worldX, worldY, button)
     end
 end
