@@ -1,2 +1,28 @@
 ### Witch of the Weast
 It's a game (WIP)!
+
+Week 1 Complete - (7/8/2025)
+# 1 Week Game Jam results:
+- Accomplished ~60% of goals
+- Thomas rating: 6/10 - Would work on it again, but need much better planning (a dedicated planning day), less crunch
+- Jason rating:     7/10  - Want to continue to work on it (after a break), get it fully functional, maybe even to stage 6 (as an end goal)
+
+## Successes
+- Learned a lot (Git, LUA, Love2D)
+- Good task allocation (not much overlap between us)
+- Good dependency management
+- Good reactivity (pivoted from original scope, which was overestimated)
+- Good asset prototyping / placeholder
+- Better variable management
+- Knew most limitations, did not waste time
+- Designed some interesting systems
+- Learned how to determine what makes a good mechanic or not (spent way too long making systems but happy we did that rather than all placeholders)
+- Learning how to best utilize ChatGPT
+
+## Failures / Considerations for next time
+- Jumped into it too quickly (Kinda the point, but still a drawback)
+- Not mapped out well enough, lead to start-stop-think-plan-start loop (First day should have been dedicated to planning, not jumped into coding)
+- No "pre-planning" day (Day 0) - Day 1 is when the planning conversation should have happened.
+- Need to map out EVERYTHING (or everything that is feasible/a core idea) beforehand. Can always add but need a better starting point. Need an endpoint, not a 'loose goal'. Can always add more later.
+- Poor choice of week (should consider schedule better next time), lost a lot of momentum
+- Working on too many systems at once (lizard not actually useful by end of week, sound bytes, color mapping everything). We went stage by stage rather than core mechanics as a priority
