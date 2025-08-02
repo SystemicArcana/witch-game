@@ -1,13 +1,13 @@
 -- LizardSpawner: Spawns clickable lizard tail that fades in/out and wiggles with rotation
-ForageSystem = require("src.ForageSystem")
-FloatingText = require("src.FloatingText")
-globals = require("src.globals")
+ForageSystem = require("src/ForageSystem")
+FloatingText = require("src/FloatingText")
+globals      = require("src/globals")
 
 local LizardSpawner = {}
 
 -- Spawn timing configuration
-local lizardSpawnInterval = 4
-local lizardSpawnIntervalVariance = 2
+local lizardSpawnInterval = 2
+local lizardSpawnIntervalVariance = 1
 
 -- Lizard visual configuration
 LizardSpawner.baseSize = 50
@@ -43,42 +43,26 @@ local function isOverlapping(x1, y1, w1, h1, x2, y2, w2, h2)
            y1 + h1 > y2
 end
 
--- Attempt to spawn the lizard randomly within full world bounds, avoiding blockers
-function LizardSpawner.spawn(blockers)
-    local width = globals.worldWidth
-    local height = globals.worldHeight
-    local maxRetries = 10
-    local found = false
+-- Attempt to spawn the lizard randomly within the current visible play area
+function LizardSpawner.spawn()
+    -- Define valid spawn area based on current play border size (diameter, so /2 to get radius around cauldron)
+    local border = globals.playBorderSize / 2
+    local minX = math.max(globals.cauldronX - border, globals.worldMinX)
+    local maxX = math.min(globals.cauldronX + border - LizardSpawner.size, globals.worldMaxX - LizardSpawner.size)
+    local minY = math.max(globals.cauldronY - border, globals.worldMinY)
+    local maxY = math.min(globals.cauldronY + border - LizardSpawner.size, globals.worldMaxY - LizardSpawner.size)
 
-    for i = 1, maxRetries do
-        local x = math.random(0, width - LizardSpawner.size)
-        local y = math.random(0, height - LizardSpawner.size)
+    local x = math.random(minX, maxX)
+    local y = math.random(minY, maxY)
 
-        local overlaps = false
-        for _, b in ipairs(blockers or {}) do
-            if isOverlapping(x, y, LizardSpawner.size, LizardSpawner.size, b.x, b.y, b.w, b.h) then
-                overlaps = true
-                break
-            end
-        end
-
-        if not overlaps then
-            LizardSpawner.x = x
-            LizardSpawner.y = y
-            LizardSpawner.visible = true
-            LizardSpawner.alpha = 0
-            LizardSpawner.fadingIn = true
-            LizardSpawner.fadingOut = false
-            LizardSpawner.fadeTimer = 0
-            LizardSpawner.wiggleTimer = 0
-            found = true
-            break
-        end
-    end
-
-    if not found then
-        LizardSpawner.visible = false
-    end
+    LizardSpawner.x = x
+    LizardSpawner.y = y
+    LizardSpawner.visible = true
+    LizardSpawner.alpha = 0
+    LizardSpawner.fadingIn = true
+    LizardSpawner.fadingOut = false
+    LizardSpawner.fadeTimer = 0
+    LizardSpawner.wiggleTimer = 0
 end
 
 -- Instantly remove lizard from screen
@@ -147,10 +131,6 @@ function LizardSpawner.isClicked(mx, my)
         LizardSpawner.visible and
         mx >= LizardSpawner.x and mx <= LizardSpawner.x + LizardSpawner.size and
         my >= LizardSpawner.y and my <= LizardSpawner.y + LizardSpawner.size
-
-        -- print(string.format("Clicked at (%.1f, %.1f) | Box at (%.1f, %.1f, %d) → Inside: %s",
-        -- mx, my, LizardSpawner.x, LizardSpawner.y, LizardSpawner.size, tostring(inside)))
-
     return inside
 end
 
@@ -212,9 +192,17 @@ end
 function LizardSpawner.mousepressed(x, y, button)
     if button == 1 then
         if LizardSpawner.isClicked(x, y) then
-            --print("LIZARD CLICKED!")
+            -- Increment Lizard Tail in globals
+            for _, resource in ipairs(globals.rareResources) do
+                if resource.name == "Lizard Tail" then
 
-            globals.lizardTailsOwned = globals.lizardTailsOwned + 1
+                    resource.amount = resource.amount + 1                     -- Add tail to storage
+                    globals.discoveredRareResources[resource.name] = true     -- Mark tail as discovered 
+                    
+                    break
+                end
+            end
+
             LizardSpawner.hideInstant()
             globals.lizardSpawnTimer = LizardSpawner.getRandomLizardSpawnInterval()
 
@@ -222,7 +210,6 @@ function LizardSpawner.mousepressed(x, y, button)
             local baseY = LizardSpawner.y - 10
 
             FloatingText.spawn(baseX, baseY, "+1 Lizard Tail")
-            FloatingText.spawn(baseX, baseY + 30, "Total Owned: " .. globals.lizardTailsOwned)
         end
     end
 end

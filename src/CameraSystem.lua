@@ -1,75 +1,130 @@
 local CameraSystem = {}
-globals = require("src/globals")
-local radialShader = {}
+local globals = require("src/globals")
+
+-- Drag state
+local dragging = false
+local dragStart = {x = 0, y = 0}
+local cameraStart = {x = 0, y = 0}
+
+-- Wall status flags
+local walls = {left=false, right=false, top=false, bottom=false}
+
+-- ===============================
+-- INITIAL LOAD
+-- ===============================
 function CameraSystem.load()
-    local width, height = love.graphics.getDimensions()
-    radialShader = love.graphics.newShader[[
-    extern number cameraY;
-    extern number worldHeight;
-    extern vec2 cameraOffset;
-    extern vec2 center;
-    extern number radius;
-    extern vec4 colorCenter;
-    extern vec4 colorTop;
-    extern vec4 colorEdge;
-
-    vec4 effect(vec4 vcolor, Image tex, vec2 texCoords, vec2 screenCoords) {
-        float dist = distance(screenCoords + cameraOffset, center);
-        float radialFactor = clamp(dist / radius, 0.0, 1.0);
-
-        // Shift the vertical position by camera Y
-        float adjustedY = screenCoords.y + cameraY;
-
-        // Vertical blending factor: lower = black, higher = white
-        float verticalFactor = clamp(1.0 - (adjustedY / worldHeight), 0.0, 1.0);
-
-        vec4 edgeMix = mix(colorEdge, colorTop, verticalFactor);
-        return mix(colorCenter, edgeMix, radialFactor);
-    }
-    ]]
-
-    -- Set parameters
-    radialShader:send("center", {globals.worldWidth / 2, globals.worldHeight / 2})
-    radialShader:send("radius", math.max(width, height) / 1.1)
-    radialShader:send("worldHeight", globals.worldHeight)
-    radialShader:send("colorCenter", {0.5, 0.5, 0.5, 1.0})  -- Gray
-    radialShader:send("colorTop", {1.0, 1.0, 1.0, 1.0})     -- White (top highlight)
-    radialShader:send("colorEdge", {0.0, 0.0, 0.0, 1.0})    -- Black (edges)
-    
+    -- Placeholder for shaders if you add background effects
 end
 
-function CameraSystem.draw()
-    local camX, camY = globals.cam:position()
-     radialShader:send("cameraY", camY)
-    radialShader:send("cameraOffset", {camX, camY})
-    love.graphics.setShader(radialShader)
-    local w = globals.worldWidth
-    local h = globals.worldHeight
-    love.graphics.rectangle("fill", 0, 0, w, h)
-    love.graphics.setShader()
-end
+-- ===============================
+-- CAMERA UPDATE (smooth pan & zoom)
+-- ===============================
+function CameraSystem.update(dt)
+    -- Smooth position
+    local cx, cy = globals.cam:position()
+    cx = cx + (globals.camTargetX - cx) * globals.cameraLerpSpeed * dt
+    cy = cy + (globals.camTargetY - cy) * globals.cameraLerpSpeed * dt
+    globals.cam:lookAt(cx, cy)
 
-function CameraSystem.scroll(mx, my, dt)
-    -- Horizontal edge scrolling
-    if mx < globals.edgeMargin then
-        globals.cam:move(-globals.scrollSpeed * dt, 0)
-    elseif mx > globals.screenWidth - globals.edgeMargin then
-        globals.cam:move(globals.scrollSpeed * dt, 0)
-    end
+    -- Smooth zoom
+    local cz = globals.cam.scale
+    local nz = cz + (globals.camTargetZoom - cz) * globals.zoomLerpSpeed * dt
+    globals.cam:zoomTo(nz)
 
-    -- Vertical edge scrolling (optional)
-    if my < globals.edgeMargin then
-        globals.cam:move(0, -globals.scrollSpeed * dt)
-    elseif my > globals.screenHeight - globals.edgeMargin then
-        globals.cam:move(0, globals.scrollSpeed * dt)
+    -- Dragging
+    if dragging then
+        local mx, my = love.mouse.getPosition()
+        local dx = (dragStart.x - mx) / globals.cam.scale
+        local dy = (dragStart.y - my) / globals.cam.scale
+        globals.camTargetX = cameraStart.x + dx
+        globals.camTargetY = cameraStart.y + dy
     end
 end
 
+-- ===============================
+-- CLAMP CAMERA TO CURRENT PLAY AREA
+-- ===============================
 function CameraSystem.clampCamera()
+    local zoom = globals.cam.scale
+    local halfW = (globals.screenWidth / zoom) / 2
+    local halfH = (globals.screenHeight / zoom) / 2
+
+    -- If visible area exceeds playBorderSize, skip clamping
+    if (halfW * 2) >= globals.playBorderSize and (halfH * 2) >= globals.playBorderSize then
+        return
+    end
+
+    -- Play area centered on world center
+    local centerX = (globals.worldMinX + globals.worldMaxX) / 2
+    local centerY = (globals.worldMinY + globals.worldMaxY) / 2
+    local halfPlay = globals.playBorderSize / 2
+
+    local minX = centerX - halfPlay + halfW
+    local maxX = centerX + halfPlay - halfW
+    local minY = centerY - halfPlay + halfH
+    local maxY = centerY + halfPlay - halfH
+
+    globals.camTargetX = math.max(minX, math.min(globals.camTargetX, maxX))
+    globals.camTargetY = math.max(minY, math.min(globals.camTargetY, maxY))
+end
+
+-- ===============================
+-- ZOOM CONTROL
+-- ===============================
+function CameraSystem.handleZoomInput(dy)
+    local factor = 1.1 ^ dy
+    local newZoom = globals.camTargetZoom * factor
+    newZoom = math.max(globals.zoomMin, math.min(newZoom, globals.zoomMax))
+    globals.camTargetZoom = newZoom
+
+    -- Always center zoom around cauldron
+    globals.camTargetX = globals.cauldronX
+    globals.camTargetY = globals.cauldronY
+end
+
+-- ===============================
+-- DRAGGING
+-- ===============================
+function CameraSystem.beginDrag(x, y)
+    dragging = true
+    dragStart.x, dragStart.y = x, y
+    cameraStart.x, cameraStart.y = globals.camTargetX, globals.camTargetY
+end
+
+function CameraSystem.endDrag()
+    dragging = false
+end
+
+-- ===============================
+-- WALL DETECTION
+-- ===============================
+function CameraSystem.updateWallStatus()
+    local zoom = globals.cam.scale
+    local halfW = (globals.screenWidth / zoom) / 2
+    local halfH = (globals.screenHeight / zoom) / 2
+    local centerX = (globals.worldMinX + globals.worldMaxX) / 2
+    local centerY = (globals.worldMinY + globals.worldMaxY) / 2
+    local halfPlay = globals.playBorderSize / 2
+
+    -- If visible area exceeds playBorderSize, disable wall indicators
+    if (halfW * 2) >= globals.playBorderSize or (halfH * 2) >= globals.playBorderSize then
+        walls.left, walls.right, walls.top, walls.bottom = false, false, false, false
+        return
+    end
+
     local x, y = globals.cam:position()
-    local camX = math.max(0, math.min(x, globals.worldWidth))
-    local camY = math.max(0, math.min(y, globals.worldHeight))
-    globals.cam:lookAt(camX, camY)
+
+    walls.left   = (x - halfW) <= (centerX - halfPlay + globals.epsilon)
+    walls.right  = (x + halfW) >= (centerX + halfPlay - globals.epsilon)
+    walls.top    = (y - halfH) <= (centerY - halfPlay + globals.epsilon)
+    walls.bottom = (y + halfH) >= (centerY + halfPlay - globals.epsilon)
+end
+
+-- ===============================
+-- DRAW BACKGROUND (Optional)
+-- ===============================
+function CameraSystem.draw()
+    -- Background rendering placeholder
 end
 
 return CameraSystem
